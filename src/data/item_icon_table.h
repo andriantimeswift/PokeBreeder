@@ -807,7 +807,7 @@ const u32 *const gItemIconTable[ITEMS_COUNT + 1][2] =
     [ITEMS_COUNT] = {gItemIcon_ReturnToFieldArrow, gItemIconPalette_ReturnToFieldArrow},
 };
 
-#ifdef ITEM_EXPANSION
+
 const u32 *const gBallIconTable[][2] =
 {
    [BALL_POKE] = {gBallIcon_Poke, gBallIconPalette_Poke},
@@ -838,34 +838,3 @@ const u32 *const gBallIconTable[][2] =
    [BALL_BEAST] = {gBallIcon_Beast, gBallIconPalette_Beast},
    [BALL_CHERISH] = {gBallIcon_Cherish, gBallIconPalette_Cherish},
 };
-#else
-const u32 *const gBallIconTable[][2] =
-{
-    [BALL_POKE] = {gBallIcon_Poke, gBallIconPalette_Poke},
-    [BALL_GREAT] = {gBallIcon_Great, gBallIconPalette_Great},
-    [BALL_SAFARI] = {gBallIcon_Safari, gBallIconPalette_Safari},
-    [BALL_ULTRA] = {gBallIcon_Ultra, gBallIconPalette_Ultra},
-    [BALL_MASTER] = {gBallIcon_Master, gBallIconPalette_Master},
-    [BALL_NET] = {gBallIcon_Net, gBallIconPalette_Net},
-    [BALL_DIVE] = {gBallIcon_Dive, gBallIconPalette_Dive},
-    [BALL_NEST] = {gBallIcon_Nest, gBallIconPalette_Nest},
-    [BALL_REPEAT] = {gBallIcon_Repeat, gBallIconPalette_Repeat},
-    [BALL_TIMER] = {gBallIcon_Timer, gBallIconPalette_Timer},
-    [BALL_LUXURY] = {gBallIcon_Luxury, gBallIconPalette_Luxury},
-    [BALL_PREMIER] = {gBallIcon_Premier, gBallIconPalette_Premier},
-    {gBallIcon_Dusk, gBallIconPalette_Dusk},
-    {gBallIcon_Heal, gBallIconPalette_Heal},
-    {gBallIcon_Quick, gBallIconPalette_Quick},
-    {gBallIcon_Cherish, gBallIconPalette_Cherish},
-    {gBallIcon_Fast, gBallIconPalette_Fast},
-    {gBallIcon_Level, gBallIconPalette_Level},
-    {gBallIcon_Lure, gBallIconPalette_Lure},
-    {gBallIcon_Heavy, gBallIconPalette_Heavy},
-    {gBallIcon_Love, gBallIconPalette_Love},
-    {gBallIcon_Friend, gBallIconPalette_Friend},
-    {gBallIcon_Moon, gBallIconPalette_Moon},
-    {gBallIcon_Sport, gBallIconPalette_Sport},
-    {gBallIcon_Dream, gBallIconPalette_Dream},
-    {gBallIcon_Beast, gBallIconPalette_Beast},
-};
-#endif
