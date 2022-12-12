@@ -37,6 +37,13 @@ void LoadSpecialReflectionPalette(struct Sprite *sprite);
 
 extern u16 gReflectionPaletteBuffer[];
 
+enum
+{
+    COLOR_MAP_NONE,
+    COLOR_MAP_DARK_CONTRAST,
+    COLOR_MAP_CONTRAST,
+};
+
 // Used by several field effects to determine which of a group it is
 #define sFldEff    data[1]
 
@@ -92,7 +99,7 @@ static void LoadObjectReflectionPalette(struct ObjectEvent *objectEvent, struct 
         reflectionSprite->sReflectionVerticalOffset = bridgeReflectionVerticalOffsets[bridgeType - 1];
         LoadObjectEventPalette(OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION);
         reflectionSprite->oam.paletteNum = IndexOfSpritePaletteTag(OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION);
-        UpdatePaletteGammaType(reflectionSprite->oam.paletteNum, GAMMA_NORMAL);
+        UpdatePaletteGammaType(reflectionSprite->oam.paletteNum, COLOR_MAP_NONE);
         UpdateSpritePaletteWithWeather(reflectionSprite->oam.paletteNum);
     }
     else
@@ -125,7 +132,7 @@ void LoadSpecialReflectionPalette(struct Sprite *sprite)
 	reflectionPalette.tag = GetSpritePaletteTagByPaletteNum(sprite->oam.paletteNum) + 0x1000;
 	LoadSpritePalette(&reflectionPalette);
 	sprite->oam.paletteNum = IndexOfSpritePaletteTag(reflectionPalette.tag);
-	UpdatePaletteGammaType(sprite->oam.paletteNum, GAMMA_ALT);
+	UpdatePaletteGammaType(sprite->oam.paletteNum, COLOR_MAP_CONTRAST);
 	UpdateSpritePaletteWithWeather(sprite->oam.paletteNum);
 }
 
@@ -1777,7 +1784,7 @@ static void LoadFieldEffectPalette_(u8 fieldEffect, bool8 updateGammaType)
     {
         LoadObjectEventPalette(spriteTemplate->paletteTag);
         if (updateGammaType)
-            UpdatePaletteGammaType(IndexOfSpritePaletteTag(spriteTemplate->paletteTag), GAMMA_NORMAL);
+            UpdatePaletteGammaType(IndexOfSpritePaletteTag(spriteTemplate->paletteTag), COLOR_MAP_DARK_CONTRAST);
     }
 }
 

@@ -275,7 +275,6 @@ void FieldCB_DefaultWarpExit(void)
     WarpFadeInScreen();
     SetUpWarpExitTask();
     FollowMe_WarpSetEnd();
-    ScriptContext2_Enable();
     LockPlayerFieldControls();
 }
 
