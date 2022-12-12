@@ -2149,19 +2149,12 @@ static u8 TrySetupObjectEventSprite(struct ObjectEventTemplate *objectEventTempl
 
     objectEvent = &gObjectEvents[objectEventId];
     graphicsInfo = GetObjectEventGraphicsInfo(objectEvent->graphicsId);
-    paletteSlot = graphicsInfo->paletteSlot;
-    if (paletteSlot == 0)
+    
+
+    if (spriteTemplate->paletteTag != 0xFFFF)
     {
-        LoadPlayerObjectReflectionPalette(graphicsInfo->paletteTag, 0);
-    }
-    else if (paletteSlot == 10)
-    {
-        LoadSpecialObjectReflectionPalette(graphicsInfo->paletteTag, 10);
-    }
-    else if (paletteSlot >= 16)
-    {
-        paletteSlot -= 16;
-        _PatchObjectPalette(graphicsInfo->paletteTag, paletteSlot);
+        LoadObjectEventPalette(spriteTemplate->paletteTag);
+        UpdatePaletteGammaType(IndexOfSpritePaletteTag(spriteTemplate->paletteTag), COLOR_MAP_CONTRAST);
     }
 
     if (objectEvent->movementType == MOVEMENT_TYPE_INVISIBLE)
@@ -2344,11 +2337,6 @@ u8 CreateVirtualObject(u16 graphicsId, u8 virtualObjId, s16 x, s16 y, u8 z, u8 d
         sprite->coordOffsetEnabled = TRUE;
         sprite->sVirtualObjId = virtualObjId;
         sprite->sVirtualObjElev = z;
-        if (graphicsInfo->paletteSlot == 10)
-            LoadSpecialObjectReflectionPalette(graphicsInfo->paletteTag, graphicsInfo->paletteSlot);
-        else if (graphicsInfo->paletteSlot >= 16)
-            _PatchObjectPalette(graphicsInfo->paletteTag, graphicsInfo->paletteSlot | 0xf0);
-
         if (subspriteTables != NULL)
         {
             SetSubspriteTables(sprite, subspriteTables);
@@ -2468,22 +2456,11 @@ static void SpawnObjectEventOnReturnToField(u8 objectEventId, s16 x, s16 y)
     CopyObjectGraphicsInfoToSpriteTemplate_WithMovementType(objectEvent->graphicsId, objectEvent->movementType, &spriteTemplate, &subspriteTables);
     spriteTemplate.images = &spriteFrameImage;
 
-    *(u16 *)&spriteTemplate.paletteTag = TAG_NONE;
-    paletteSlot = graphicsInfo->paletteSlot;
-    if (paletteSlot == PALSLOT_PLAYER)
+    if (spriteTemplate.paletteTag != 0xFFFF)
     {
-        LoadPlayerObjectReflectionPalette(graphicsInfo->paletteTag, graphicsInfo->paletteSlot);
+        LoadObjectEventPalette(spriteTemplate.paletteTag);
+        UpdatePaletteGammaType(IndexOfSpritePaletteTag(spriteTemplate.paletteTag), COLOR_MAP_CONTRAST);
     }
-    else if (paletteSlot == PALSLOT_NPC_SPECIAL)
-    {
-        LoadSpecialObjectReflectionPalette(graphicsInfo->paletteTag, graphicsInfo->paletteSlot);
-    }
-    else if (paletteSlot >= 16)
-    {
-        paletteSlot -= 16;
-        _PatchObjectPalette(graphicsInfo->paletteTag, paletteSlot);
-    }
-    *(u16 *)&spriteTemplate.paletteTag = TAG_NONE;
 
     i = CreateSprite(&spriteTemplate, 0, 0, 0);
     if (i != MAX_SPRITES)
@@ -2503,7 +2480,7 @@ static void SpawnObjectEventOnReturnToField(u8 objectEventId, s16 x, s16 y)
         if (subspriteTables != NULL)
             SetSubspriteTables(sprite, subspriteTables);
 
-        sprite->oam.paletteNum = paletteSlot;
+        sprite->oam.paletteNum = IndexOfSpritePaletteTag(spriteTemplate.paletteTag);
         sprite->coordOffsetEnabled = TRUE;
         sprite->sObjEventId = objectEventId;
         objectEvent->spriteId = i;
@@ -2544,20 +2521,12 @@ void ObjectEventSetGraphicsId(struct ObjectEvent *objectEvent, u16 graphicsId)
 
     graphicsInfo = GetObjectEventGraphicsInfo(graphicsId);
     sprite = &gSprites[objectEvent->spriteId];
-    paletteSlot = graphicsInfo->paletteSlot;
-    if (paletteSlot == 0)
+    
+
+    if (graphicsInfo->paletteTag != 0xFFFF)
     {
         LoadObjectEventPalette(graphicsInfo->paletteTag);
         UpdatePaletteGammaType(IndexOfSpritePaletteTag(graphicsInfo->paletteTag), COLOR_MAP_CONTRAST);
-    }
-    else if (paletteSlot == PALSLOT_NPC_SPECIAL)
-    {
-        LoadSpecialObjectReflectionPalette(graphicsInfo->paletteTag, graphicsInfo->paletteSlot);
-    }
-    else if (paletteSlot >= 16)
-    {
-        paletteSlot -= 16;
-        _PatchObjectPalette(graphicsInfo->paletteTag, paletteSlot);
     }
     sprite->oam.shape = graphicsInfo->oam->shape;
     sprite->oam.size = graphicsInfo->oam->size;
