@@ -1785,7 +1785,7 @@ static void Task_HandleInput(u8 taskId)
                 PlaySE(SE_SELECT);
                 SwitchToMoveSelection(taskId);
             }
-            else if (sMonSummaryScreen->currPageIndex == PSS_PAGE_SKILLS && FlagGet(FLAG_SYS_GAME_CLEAR))
+            else if (sMonSummaryScreen->currPageIndex == PSS_PAGE_SKILLS && FlagGet(FLAG_RECEIVED_POKESCANNER))
             {
                 PlaySE(SE_SELECT);
                 SetTaskFuncWithFollowupFunc(taskId, ChangeStatTask, gTasks[taskId].func);
@@ -3509,30 +3509,9 @@ static void PrintSkillsPage(void)
     struct PokeSummary *summary = &sMonSummaryScreen->summary;
     const s8 *natureMod = gNatureStatTable[sMonSummaryScreen->summary.nature];
 
-    u8 string_HP[13];
-    u8 string_Attack[13];
-    u8 string_Defense[13];
-    u8 string_SpAtk[13];
-    u8 string_SpDef[13];
-    u8 string_Speed[13];
-
-    StringCopy(string_HP, sIVRanking[(summary->hpIV / 2)]);
-    StringAppend(string_HP, sText_HP);
-    StringCopy(string_Attack, sIVRanking[(summary->atkIV / 2)]);
-    StringAppend(string_Attack, sText_Attack);
-    StringCopy(string_Defense, sIVRanking[(summary->defIV / 2)]);
-    StringAppend(string_Defense, sText_Defense);
-    StringCopy(string_SpAtk, sIVRanking[(summary->spatkIV / 2)]);
-    StringAppend(string_SpAtk, sText_SpecialAttack);
-    StringCopy(string_SpDef, sIVRanking[(summary->spdefIV / 2)]);
-    StringAppend(string_SpDef, sText_SpecialDefense);
-    StringCopy(string_Speed, sIVRanking[(summary->speedIV / 2)]);
-    StringAppend(string_Speed, sText_Speed);
-
-
     FillWindowPixelBuffer(PSS_LABEL_PANE_RIGHT, PIXEL_FILL(0));
 
-    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, string_HP, 12, 1, 0, PSS_COLOR_WHITE_BLACK_SHADOW);
+    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_HP, 12, 1, 0, PSS_COLOR_WHITE_BLACK_SHADOW);
     if (sMonSummaryScreen->currStatIndex == 0)
     {
         ConvertIntToDecimalStringN(gStringVar1, summary->currentHP, STR_CONV_MODE_LEFT_ALIGN, 3);
@@ -3559,7 +3538,7 @@ static void PrintSkillsPage(void)
         PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_NatureUp, 0, 24, 0, COLOR_STAT_ARROWS);
     else if (natureMod[STAT_ATK - 1] < 0)
         PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_NatureDown, 0, 24, 0, COLOR_STAT_ARROWS);
-    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, string_Attack, 12, 24, 0, 1);
+    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_Attack, 12, 24, 0, 1);
     if (sMonSummaryScreen->currStatIndex == 0)
         ConvertIntToDecimalStringN(gStringVar1, summary->atk, STR_CONV_MODE_LEFT_ALIGN, 3);
     else if (sMonSummaryScreen->currStatIndex == 1)
@@ -3573,7 +3552,7 @@ static void PrintSkillsPage(void)
         PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_NatureUp, 0, 40, 0, COLOR_STAT_ARROWS);
     else if (natureMod[STAT_DEF - 1] < 0)
         PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_NatureDown, 0, 40, 0, COLOR_STAT_ARROWS);
-    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, string_Defense, 12, 40, 0, 1);
+    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_Defense, 12, 40, 0, 1);
     if (sMonSummaryScreen->currStatIndex == 0)
         ConvertIntToDecimalStringN(gStringVar1, summary->def, STR_CONV_MODE_LEFT_ALIGN, 3);
     else if (sMonSummaryScreen->currStatIndex == 1)
@@ -3587,7 +3566,7 @@ static void PrintSkillsPage(void)
         PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_NatureUp, 0, 56, 0, COLOR_STAT_ARROWS);
     else if (natureMod[STAT_SPATK - 1] < 0)
         PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_NatureDown, 0, 56, 0, COLOR_STAT_ARROWS);
-    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, string_SpAtk, 12, 56, 0, PSS_COLOR_WHITE_BLACK_SHADOW);
+    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_SpecialAttack, 12, 56, 0, PSS_COLOR_WHITE_BLACK_SHADOW);
     if (sMonSummaryScreen->currStatIndex == 0)
         ConvertIntToDecimalStringN(gStringVar1, summary->spatk, STR_CONV_MODE_LEFT_ALIGN, 3);
     else if (sMonSummaryScreen->currStatIndex == 1)
@@ -3601,7 +3580,7 @@ static void PrintSkillsPage(void)
         PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_NatureUp, 0, 72, 0, COLOR_STAT_ARROWS);
     else if (natureMod[STAT_SPDEF - 1] < 0)
         PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_NatureDown, 0, 72, 0, COLOR_STAT_ARROWS);
-    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, string_SpDef, 12, 72, 0, 1);
+    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_SpecialDefense, 12, 72, 0, 1);
     if (sMonSummaryScreen->currStatIndex == 0)
         ConvertIntToDecimalStringN(gStringVar1, summary->spdef, STR_CONV_MODE_LEFT_ALIGN, 3);
     else if (sMonSummaryScreen->currStatIndex == 1)
@@ -3615,7 +3594,7 @@ static void PrintSkillsPage(void)
         PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_NatureUp, 0, 88, 0, COLOR_STAT_ARROWS);
     else if (natureMod[STAT_SPEED - 1] < 0)
         PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_NatureDown, 0, 88, 0, COLOR_STAT_ARROWS);
-    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, string_Speed, 12, 88, 0, PSS_COLOR_WHITE_BLACK_SHADOW);
+    PrintTextOnWindow(PSS_LABEL_PANE_RIGHT, sText_Speed, 12, 88, 0, PSS_COLOR_WHITE_BLACK_SHADOW);
     if (sMonSummaryScreen->currStatIndex == 0)
         ConvertIntToDecimalStringN(gStringVar1, summary->speed, STR_CONV_MODE_LEFT_ALIGN, 3);
     else if (sMonSummaryScreen->currStatIndex == 1)
@@ -4732,7 +4711,7 @@ static void PrintInfoBar(u8 pageIndex, bool8 detailsShown)
             StringCopy(gStringVar2, sText_TitlePage);
             break;
         case PSS_PAGE_SKILLS:
-            if (!FlagGet(FLAG_SYS_GAME_CLEAR))
+            if (!FlagGet(FLAG_RECEIVED_POKESCANNER))
             {
                 StringCopy(gStringVar1, sText_TitleSkills);
                 StringCopy(gStringVar2, sText_TitlePage);
