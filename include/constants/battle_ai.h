@@ -31,6 +31,7 @@
 #define AI_WEATHER_SANDSTORM 3
 #define AI_WEATHER_HAIL 4
 
+
 // get_how_powerful_move_is
 #define MOVE_POWER_OTHER  0
 #define MOVE_POWER_BEST   1

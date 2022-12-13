@@ -286,49 +286,6 @@ struct AiLogicData
     u8 moveLimitations[MAX_BATTLERS_COUNT];
 };
 
-struct AI_SavedBattleMon
-{
-    u16 ability;
-    u16 moves[MAX_MON_MOVES];
-    u16 heldItem;
-    u16 species;
-};
-
-struct AiPartyMon
-{
-    u16 species;
-    u16 item;
-    u16 heldEffect;
-    u16 ability;
-    u16 gender;
-    u16 level;
-    u16 moves[MAX_MON_MOVES];
-    u32 status;
-    bool8 isFainted;
-    bool8 wasSentInBattle;
-    u8 switchInCount; // Counts how many times this Pokemon has been sent out or switched into in a battle.
-};
-
-struct AIPartyData // Opposing battlers - party mons.
-{
-    struct AiPartyMon mons[2][PARTY_SIZE]; // 2 parties(player, opponent). Used to save information on opposing party.
-    u8 count[2];
-};
-
-struct AiLogicData
-{
-    u16 abilities[MAX_BATTLERS_COUNT];
-    u16 items[MAX_BATTLERS_COUNT];
-    u16 holdEffects[MAX_BATTLERS_COUNT];
-    u8 holdEffectParams[MAX_BATTLERS_COUNT];
-    u16 predictedMoves[MAX_BATTLERS_COUNT];
-    u8 hpPercents[MAX_BATTLERS_COUNT];
-    u16 partnerMove;
-    s32 simulatedDmg[MAX_BATTLERS_COUNT][MAX_BATTLERS_COUNT][MAX_MON_MOVES]; // attacker, target, moveIndex
-    u8 effectiveness[MAX_BATTLERS_COUNT][MAX_BATTLERS_COUNT][MAX_MON_MOVES]; // attacker, target, moveIndex
-    u8 moveLimitations[MAX_BATTLERS_COUNT];
-};
-
 struct AI_ThinkingStruct
 {
     u8 aiState;
@@ -341,6 +298,7 @@ struct AI_ThinkingStruct
     u8 aiLogicId;
     struct AI_SavedBattleMon saved[4];
     bool8 switchMon; // Because all available moves have no/little effect.
+    u8 simulatedRNG[MAX_MON_MOVES];
 };
 
 #define AI_MOVE_HISTORY_COUNT 3
@@ -387,6 +345,7 @@ struct BattleResources
     struct BattleHistory *battleHistory;
     u8 bufferA[MAX_BATTLERS_COUNT][0x200];
     u8 bufferB[MAX_BATTLERS_COUNT][0x200];
+    struct BattleScriptsStack *AI_ScriptsStack;
 };
 
 #define AI_THINKING_STRUCT ((struct AI_ThinkingStruct *)(gBattleResources->ai))
@@ -787,6 +746,7 @@ struct BattleScripting
     u8 switchCase;  // Special switching conditions, eg. red card
     u8 overrideBerryRequirements;
     u8 stickyWebStatDrop; // To prevent Defiant activating on a Court Change'd Sticky Web
+    u8 dmgMultiplier;
 };
 
 struct BattleSpriteInfo
@@ -976,6 +936,7 @@ extern u16 gBattleWeather;
 extern struct WishFutureKnock gWishFutureKnock;
 extern u16 gIntroSlideFlags;
 extern u8 gSentPokesToOpponent[2];
+extern u16 gDynamicBasePower;
 extern u16 gExpShareExp;
 extern struct BattleEnigmaBerry gEnigmaBerries[MAX_BATTLERS_COUNT];
 extern struct BattleScripting gBattleScripting;
