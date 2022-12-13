@@ -50,10 +50,10 @@
 */
 
 // PC main menu options
-enum {
+enum {    
+    OPTION_MOVE_MONS,
     OPTION_WITHDRAW,
     OPTION_DEPOSIT,
-    OPTION_MOVE_MONS,
     OPTION_MOVE_ITEMS,
     OPTION_EXIT,
     OPTIONS_COUNT
