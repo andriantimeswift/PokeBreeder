@@ -240,7 +240,50 @@ struct WishFutureKnock
     u8 wishCounter[MAX_BATTLERS_COUNT];
     u8 wishPartyId[MAX_BATTLERS_COUNT];
     u8 weatherDuration;
-    u8 knockedOffMons[2]; // Each battler is represented by a bit. The array entry is dependent on the battler's side.
+    u8 knockedOffMons[2]; // Each battler is represented by a bit.
+};
+
+struct AI_SavedBattleMon
+{
+    u16 ability;
+    u16 moves[MAX_MON_MOVES];
+    u16 heldItem;
+    u16 species;
+};
+
+struct AiPartyMon
+{
+    u16 species;
+    u16 item;
+    u16 heldEffect;
+    u16 ability;
+    u16 gender;
+    u16 level;
+    u16 moves[MAX_MON_MOVES];
+    u32 status;
+    bool8 isFainted;
+    bool8 wasSentInBattle;
+    u8 switchInCount; // Counts how many times this Pokemon has been sent out or switched into in a battle.
+};
+
+struct AIPartyData // Opposing battlers - party mons.
+{
+    struct AiPartyMon mons[2][PARTY_SIZE]; // 2 parties(player, opponent). Used to save information on opposing party.
+    u8 count[2];
+};
+
+struct AiLogicData
+{
+    u16 abilities[MAX_BATTLERS_COUNT];
+    u16 items[MAX_BATTLERS_COUNT];
+    u16 holdEffects[MAX_BATTLERS_COUNT];
+    u8 holdEffectParams[MAX_BATTLERS_COUNT];
+    u16 predictedMoves[MAX_BATTLERS_COUNT];
+    u8 hpPercents[MAX_BATTLERS_COUNT];
+    u16 partnerMove;
+    s32 simulatedDmg[MAX_BATTLERS_COUNT][MAX_BATTLERS_COUNT][MAX_MON_MOVES]; // attacker, target, moveIndex
+    u8 effectiveness[MAX_BATTLERS_COUNT][MAX_BATTLERS_COUNT][MAX_MON_MOVES]; // attacker, target, moveIndex
+    u8 moveLimitations[MAX_BATTLERS_COUNT];
 };
 
 struct AI_SavedBattleMon
@@ -451,9 +494,9 @@ struct BattleTv_Mon
 
 struct BattleTv
 {
-    struct BattleTv_Mon mon[2][PARTY_SIZE]; // [side][partyId]
-    struct BattleTv_Position pos[2][2]; // [side][flank]
-    struct BattleTv_Side side[2]; // [side]
+    struct BattleTv_Mon mon[NUM_BATTLE_SIDES][PARTY_SIZE];
+    struct BattleTv_Position pos[NUM_BATTLE_SIDES][2]; // [side][flank]
+    struct BattleTv_Side side[NUM_BATTLE_SIDES];
 };
 
 struct BattleTvMovePoints

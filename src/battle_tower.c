@@ -79,7 +79,6 @@ static void FillPartnerParty(u16 trainerId);
 static void SetEReaderTrainerChecksum(struct BattleTowerEReaderTrainer *ereaderTrainer);
 static u8 SetTentPtrsGetLevel(void);
 
-// Const rom data.
 const u16 gBattleFrontierHeldItems[] =
 {
     ITEM_NONE,

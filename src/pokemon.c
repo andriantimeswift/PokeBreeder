@@ -1952,7 +1952,7 @@ const s8 gNatureStatTable[NUM_NATURES][NUM_NATURE_STATS] =
 
 #include "data/pokemon/trainer_class_lookups.h"
 #include "data/pokemon/experience_tables.h"
-#include "data/pokemon/base_stats.h"
+#include "data/pokemon/species_info.h"
 #include "data/pokemon/level_up_learnsets.h"
 #include "data/pokemon/teachable_learnsets.h"
 #include "data/pokemon/evolution.h"
@@ -4207,7 +4207,7 @@ static u16 CalculateBoxMonChecksum(struct BoxPokemon *boxMon)
 
 #define CALC_STAT(base, iv, ev, statIndex, field)               \
 {                                                               \
-    u8 baseStat = gBaseStats[species].base;                     \
+    u8 baseStat = gBaseStats[species].base;                   \
     s32 n = (((2 * baseStat + iv + ev / 4) * level) / 100) + 5; \
     u8 nature = GetNature(mon);                                 \
     n = ModifyStatByNature(nature, n, statIndex);               \
@@ -5150,15 +5150,6 @@ u32 GetBoxMonData(struct BoxPokemon *boxMon, s32 field, u8 *data)
                 | (substruct3->worldRibbon << 26);
         }
         break;
-    case MON_DATA_GENES1:
-        retVal = substruct0->genes1;
-        break;
-    case MON_DATA_GENES2:
-        retVal = substruct0->genes2;  
-        break;  
-    case MON_DATA_PHENOTYPE:
-        retVal = (substruct0->genes1 & substruct0->genes2);  
-        break;
     default:
         break;
     }
@@ -5210,6 +5201,10 @@ void SetMonData(struct Pokemon *mon, s32 field, const void *dataArg)
         SET8(mon->mail);
         break;
     case MON_DATA_SPECIES2:
+        break;
+    case MON_DATA_NATURE: // Calculate stats after settings
+        SetBoxMonData(&mon->box, field, data);
+        CalculateMonStats(mon);
         break;
     default:
         SetBoxMonData(&mon->box, field, data);
@@ -5483,6 +5478,81 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
         substruct3->spDefenseIV = (ivs >> 25) & MAX_IV_MASK;
         break;
     }
+    case MON_DATA_NATURE:
+    {
+      u32 pid = boxMon->personality;
+      u32 otId = boxMon->otId;
+      s8 diff = (data[0] % 25) - (pid % 25); // difference between new nature and current nature, [-24,24]
+      bool8 preserveShiny = FALSE;
+      bool8 preserveLetter = FALSE;
+      u16 shinyValue = HIHALF(pid) ^ LOHALF(pid);
+      s32 tweak;
+      u32 pidTemp;
+      // See https://bulbapedia.bulbagarden.net/wiki/Personality_value#Nature
+      // Goal here is to preserve as much of the PID as possible
+      // To preserve gender & substruct order, we add/subtract multiples of 5376 that is 0 % 256, 0 % 24, 1 % 25
+      // i.e, to increase the nature by n % 25, we add n*5376 % 19200 (LCM of 24, 25, 256) to the pid
+      // Ability number is determined by parity and so adding multiples of 5376 preserves it
+      // TODO: For genderless pokemon, 576/600 can be used instead of 5376/19200
+      if (diff == 0) // No change
+        break;
+      else if (diff < 0)
+        diff = 25+diff;
+      tweak = (diff*5376) % 19200;
+      pidTemp = pid + tweak;
+      // If the pokemon is shiny or if changing the PID would make it shiny, preserve its shiny value
+      if (IsShinyOtIdPersonality(otId, pid) || IsShinyOtIdPersonality(otId, pidTemp))
+        preserveShiny = TRUE;
+      if (substruct0->species == SPECIES_UNOWN) // Preserve Unown letter
+        preserveLetter = TRUE;
+      if (preserveShiny && preserveLetter) { // honestly though, how many shiny Unown are out there ?
+        while (pidTemp > pid) {
+          if ((HIHALF(pidTemp) ^ LOHALF(pidTemp) ^ shinyValue) < SHINY_ODDS)
+            if (GET_UNOWN_LETTER(pidTemp) == GET_UNOWN_LETTER(pid))
+              break;
+          pidTemp += 19200;
+        }
+      } else if (preserveShiny) {
+        while (pidTemp > pid) {
+          if ((HIHALF(pidTemp) ^ LOHALF(pidTemp) ^ shinyValue) < SHINY_ODDS)
+            break;
+          pidTemp += 19200;
+        }
+      } else if (preserveLetter) {
+        while (pidTemp > pid) {
+          if (GET_UNOWN_LETTER(pidTemp) == GET_UNOWN_LETTER(pid))
+            break;
+          pidTemp += 19200;
+        }
+      }
+      if (pidTemp < pid) { // overflow; search backwards
+        tweak -= 19200;
+        pidTemp = pid + tweak;
+        if (preserveShiny && preserveLetter) {
+          while (pidTemp < pid) {
+            if ((HIHALF(pidTemp) ^ LOHALF(pidTemp) ^ shinyValue) < SHINY_ODDS)
+              if (GET_UNOWN_LETTER(pidTemp) == GET_UNOWN_LETTER(pid))
+                break;
+            pidTemp -= 19200;
+          }
+        } else if (preserveShiny) {
+          while (pidTemp < pid) {
+            if ((HIHALF(pidTemp) ^ LOHALF(pidTemp) ^ shinyValue) < SHINY_ODDS)
+              break;
+            pidTemp -= 19200;
+          }
+        } else if (preserveLetter) {
+          while (pidTemp < pid) {
+            if (GET_UNOWN_LETTER(pidTemp) == GET_UNOWN_LETTER(pid))
+              break;
+            pidTemp -= 19200;
+          }
+        }
+      }
+      if (pid % 24 == pidTemp % 24 || pid % 256 == pidTemp % 256)
+        boxMon->personality = pidTemp;
+      break;
+    }
     default:
         break;
     }
@@ -5622,25 +5692,10 @@ u8 GetMonsStateToDoubles_2(void)
 
 u16 GetAbilityBySpecies(u16 species, u8 abilityNum)
 {
-    int i;
-
-    if (abilityNum < NUM_ABILITY_SLOTS)
-        gLastUsedAbility = gBaseStats[species].abilities[abilityNum];
+    if (abilityNum)
+        gLastUsedAbility = gBaseStats[species].abilities[1];
     else
-        gLastUsedAbility = ABILITY_NONE;
-
-    if (abilityNum >= NUM_NORMAL_ABILITY_SLOTS) // if abilityNum is empty hidden ability, look for other hidden abilities
-    {
-        for (i = NUM_NORMAL_ABILITY_SLOTS; i < NUM_ABILITY_SLOTS && gLastUsedAbility == ABILITY_NONE; i++)
-        {
-            gLastUsedAbility = gBaseStats[species].abilities[i];
-        }
-    }
-
-    for (i = 0; i < NUM_ABILITY_SLOTS && gLastUsedAbility == ABILITY_NONE; i++) // look for any non-empty ability
-    {
-        gLastUsedAbility = gBaseStats[species].abilities[i];
-    }
+        gLastUsedAbility = gBaseStats[species].abilities[0];
 
     return gLastUsedAbility;
 }
@@ -5768,37 +5823,34 @@ void PokemonToBattleMon(struct Pokemon *src, struct BattlePokemon *dst)
         dst->pp[i] = GetMonData(src, MON_DATA_PP1 + i, NULL);
     }
 
-    dst->species = GetMonData(src, MON_DATA_SPECIES, NULL);
-    dst->item = GetMonData(src, MON_DATA_HELD_ITEM, NULL);
-    dst->ppBonuses = GetMonData(src, MON_DATA_PP_BONUSES, NULL);
-    dst->friendship = GetMonData(src, MON_DATA_FRIENDSHIP, NULL);
-    dst->experience = GetMonData(src, MON_DATA_EXP, NULL);
-    dst->hpIV = GetMonData(src, MON_DATA_HP_IV, NULL);
-    dst->attackIV = GetMonData(src, MON_DATA_ATK_IV, NULL);
-    dst->defenseIV = GetMonData(src, MON_DATA_DEF_IV, NULL);
-    dst->speedIV = GetMonData(src, MON_DATA_SPEED_IV, NULL);
-    dst->spAttackIV = GetMonData(src, MON_DATA_SPATK_IV, NULL);
-    dst->spDefenseIV = GetMonData(src, MON_DATA_SPDEF_IV, NULL);
-    dst->personality = GetMonData(src, MON_DATA_PERSONALITY, NULL);
-    dst->status1 = GetMonData(src, MON_DATA_STATUS, NULL);
-    dst->level = GetMonData(src, MON_DATA_LEVEL, NULL);
-    dst->hp = GetMonData(src, MON_DATA_HP, NULL);
-    dst->maxHP = GetMonData(src, MON_DATA_MAX_HP, NULL);
-    dst->attack = GetMonData(src, MON_DATA_ATK, NULL);
-    dst->defense = GetMonData(src, MON_DATA_DEF, NULL);
-    dst->speed = GetMonData(src, MON_DATA_SPEED, NULL);
-    dst->spAttack = GetMonData(src, MON_DATA_SPATK, NULL);
-    dst->spDefense = GetMonData(src, MON_DATA_SPDEF, NULL);
-    dst->abilityNum = GetMonData(src, MON_DATA_ABILITY_NUM, NULL);
-    dst->otId = GetMonData(src, MON_DATA_OT_ID, NULL);
-    dst->type1 = gBaseStats[dst->species].type1;
-    dst->type2 = gBaseStats[dst->species].type2;
-    dst->type3 = TYPE_MYSTERY;
-    dst->ability = GetAbilityBySpecies(dst->species, dst->abilityNum);
-    dst->phenotype = GetMonData(src, MON_DATA_PHENOTYPE, NULL);
-    GetMonData(src, MON_DATA_NICKNAME, nickname);
-    StringCopy_Nickname(dst->nickname, nickname);
-    GetMonData(src, MON_DATA_OT_NAME, dst->otName);
+    gBattleMons[battlerId].ppBonuses = GetMonData(&gPlayerParty[partyIndex], MON_DATA_PP_BONUSES, NULL);
+    gBattleMons[battlerId].friendship = GetMonData(&gPlayerParty[partyIndex], MON_DATA_FRIENDSHIP, NULL);
+    gBattleMons[battlerId].experience = GetMonData(&gPlayerParty[partyIndex], MON_DATA_EXP, NULL);
+    gBattleMons[battlerId].hpIV = GetMonData(&gPlayerParty[partyIndex], MON_DATA_HP_IV, NULL);
+    gBattleMons[battlerId].attackIV = GetMonData(&gPlayerParty[partyIndex], MON_DATA_ATK_IV, NULL);
+    gBattleMons[battlerId].defenseIV = GetMonData(&gPlayerParty[partyIndex], MON_DATA_DEF_IV, NULL);
+    gBattleMons[battlerId].speedIV = GetMonData(&gPlayerParty[partyIndex], MON_DATA_SPEED_IV, NULL);
+    gBattleMons[battlerId].spAttackIV = GetMonData(&gPlayerParty[partyIndex], MON_DATA_SPATK_IV, NULL);
+    gBattleMons[battlerId].spDefenseIV = GetMonData(&gPlayerParty[partyIndex], MON_DATA_SPDEF_IV, NULL);
+    gBattleMons[battlerId].personality = GetMonData(&gPlayerParty[partyIndex], MON_DATA_PERSONALITY, NULL);
+    gBattleMons[battlerId].status1 = GetMonData(&gPlayerParty[partyIndex], MON_DATA_STATUS, NULL);
+    gBattleMons[battlerId].level = GetMonData(&gPlayerParty[partyIndex], MON_DATA_LEVEL, NULL);
+    gBattleMons[battlerId].hp = GetMonData(&gPlayerParty[partyIndex], MON_DATA_HP, NULL);
+    gBattleMons[battlerId].maxHP = GetMonData(&gPlayerParty[partyIndex], MON_DATA_MAX_HP, NULL);
+    gBattleMons[battlerId].attack = GetMonData(&gPlayerParty[partyIndex], MON_DATA_ATK, NULL);
+    gBattleMons[battlerId].defense = GetMonData(&gPlayerParty[partyIndex], MON_DATA_DEF, NULL);
+    gBattleMons[battlerId].speed = GetMonData(&gPlayerParty[partyIndex], MON_DATA_SPEED, NULL);
+    gBattleMons[battlerId].spAttack = GetMonData(&gPlayerParty[partyIndex], MON_DATA_SPATK, NULL);
+    gBattleMons[battlerId].spDefense = GetMonData(&gPlayerParty[partyIndex], MON_DATA_SPDEF, NULL);
+    gBattleMons[battlerId].isEgg = GetMonData(&gPlayerParty[partyIndex], MON_DATA_IS_EGG, NULL);
+    gBattleMons[battlerId].abilityNum = GetMonData(&gPlayerParty[partyIndex], MON_DATA_ABILITY_NUM, NULL);
+    gBattleMons[battlerId].otId = GetMonData(&gPlayerParty[partyIndex], MON_DATA_OT_ID, NULL);
+    gBattleMons[battlerId].type1 = gBaseStats[gBattleMons[battlerId].species].type1;
+    gBattleMons[battlerId].type2 = gBaseStats[gBattleMons[battlerId].species].type2;
+    gBattleMons[battlerId].ability = GetAbilityBySpecies(gBattleMons[battlerId].species, gBattleMons[battlerId].abilityNum);
+    GetMonData(&gPlayerParty[partyIndex], MON_DATA_NICKNAME, nickname);
+    StringCopy_Nickname(gBattleMons[battlerId].nickname, nickname);
+    GetMonData(&gPlayerParty[partyIndex], MON_DATA_OT_NAME, gBattleMons[battlerId].otName);
 
     for (i = 0; i < NUM_BATTLE_STATS; i++)
         dst->statStages[i] = DEFAULT_STAT_STAGE;
@@ -6040,27 +6092,10 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
             if ((itemEffect[i] & ITEM3_LEVEL_UP)
              && GetMonData(mon, MON_DATA_LEVEL, NULL) != MAX_LEVEL)
             {
-                u8 param = ItemId_GetHoldEffectParam(item);
-                dataUnsigned = 0;
-
-                if (param == 0) // Rare Candy
-                {
-                    dataUnsigned = gExperienceTables[gBaseStats[GetMonData(mon, MON_DATA_SPECIES, NULL)].growthRate][GetMonData(mon, MON_DATA_LEVEL, NULL) + 1];
-                }
-                else if (param - 1 < ARRAY_COUNT(sExpCandyExperienceTable)) // EXP Candies
-                {
-                    u16 species = GetMonData(mon, MON_DATA_SPECIES, NULL);
-                    dataUnsigned = sExpCandyExperienceTable[param - 1] + GetMonData(mon, MON_DATA_EXP, NULL);
-                    if (dataUnsigned > gExperienceTables[gBaseStats[species].growthRate][MAX_LEVEL])
-                        dataUnsigned = gExperienceTables[gBaseStats[species].growthRate][MAX_LEVEL];
-                }
-
-                if (dataUnsigned != 0) // Failsafe
-                {
-                    SetMonData(mon, MON_DATA_EXP, &dataUnsigned);
-                    CalculateMonStats(mon);
-                    retVal = FALSE;
-                }
+                dataUnsigned = gExperienceTables[gBaseStats[GetMonData(mon, MON_DATA_SPECIES, NULL)].growthRate][GetMonData(mon, MON_DATA_LEVEL, NULL) + 1];
+                SetMonData(mon, MON_DATA_EXP, &dataUnsigned);
+                CalculateMonStats(mon);
+                retVal = FALSE;
             }
 
             // Cure status
@@ -7394,40 +7429,22 @@ void MonGainEVs(struct Pokemon *mon, u16 defeatedSpecies)
         switch (i)
         {
         case STAT_HP:
-            if (holdEffect == HOLD_EFFECT_POWER_ITEM && stat == STAT_HP)
-                evIncrease = (gBaseStats[defeatedSpecies].evYield_HP + bonus) * multiplier;
-            else
-                evIncrease = gBaseStats[defeatedSpecies].evYield_HP * multiplier;
+            evIncrease = gBaseStats[defeatedSpecies].evYield_HP * multiplier;
             break;
         case STAT_ATK:
-            if (holdEffect == HOLD_EFFECT_POWER_ITEM && stat == STAT_ATK)
-                evIncrease = (gBaseStats[defeatedSpecies].evYield_Attack + bonus) * multiplier;
-            else
-                evIncrease = gBaseStats[defeatedSpecies].evYield_Attack * multiplier;
+            evIncrease = gBaseStats[defeatedSpecies].evYield_Attack * multiplier;
             break;
         case STAT_DEF:
-            if (holdEffect == HOLD_EFFECT_POWER_ITEM && stat == STAT_DEF)
-                evIncrease = (gBaseStats[defeatedSpecies].evYield_Defense + bonus) * multiplier;
-            else
-                evIncrease = gBaseStats[defeatedSpecies].evYield_Defense * multiplier;
+            evIncrease = gBaseStats[defeatedSpecies].evYield_Defense * multiplier;
             break;
         case STAT_SPEED:
-            if (holdEffect == HOLD_EFFECT_POWER_ITEM && stat == STAT_SPEED)
-                evIncrease = (gBaseStats[defeatedSpecies].evYield_Speed + bonus) * multiplier;
-            else
-                evIncrease = gBaseStats[defeatedSpecies].evYield_Speed * multiplier;
+            evIncrease = gBaseStats[defeatedSpecies].evYield_Speed * multiplier;
             break;
         case STAT_SPATK:
-            if (holdEffect == HOLD_EFFECT_POWER_ITEM && stat == STAT_SPATK)
-                evIncrease = (gBaseStats[defeatedSpecies].evYield_SpAttack + bonus) * multiplier;
-            else
-                evIncrease = gBaseStats[defeatedSpecies].evYield_SpAttack * multiplier;
+            evIncrease = gBaseStats[defeatedSpecies].evYield_SpAttack * multiplier;
             break;
         case STAT_SPDEF:
-            if (holdEffect == HOLD_EFFECT_POWER_ITEM && stat == STAT_SPDEF)
-                evIncrease = (gBaseStats[defeatedSpecies].evYield_SpDefense + bonus) * multiplier;
-            else
-                evIncrease = gBaseStats[defeatedSpecies].evYield_SpDefense * multiplier;
+            evIncrease = gBaseStats[defeatedSpecies].evYield_SpDefense * multiplier;
             break;
         }
 
@@ -8307,51 +8324,42 @@ void SetWildMonHeldItem(void)
             chanceNoItem = 20;
             chanceNotRare = 80;
         }
-
-        for (i = 0; i < count; i++)
+        if (gMapHeader.mapLayoutId == LAYOUT_ALTERING_CAVE)
         {
-            if (GetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, NULL) != ITEM_NONE)
-                continue; // prevent ovewriting previously set item
-
-            rnd = Random() % 100;
-            species = GetMonData(&gEnemyParty[i], MON_DATA_SPECIES, 0);
-            if (gMapHeader.mapLayoutId == LAYOUT_ALTERING_CAVE)
+            s32 alteringCaveId = GetWildMonTableIdInAlteringCave(species);
+            if (alteringCaveId != 0)
             {
-                s32 alteringCaveId = GetWildMonTableIdInAlteringCave(species);
-                if (alteringCaveId != 0)
-                {
-                    // In active Altering Cave, use special item list
-                    if (rnd < chanceNotRare)
-                        continue;
-                    SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &sAlteringCaveWildMonHeldItems[alteringCaveId].item);
-                }
-                else
-                {
-                    // In inactive Altering Cave, use normal items
-                    if (rnd < chanceNoItem)
-                        continue;
-                    if (rnd < chanceNotRare)
-                        SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &gBaseStats[species].itemCommon);
-                    else
-                        SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &gBaseStats[species].itemRare);
-                }
+                // In active Altering Cave, use special item list
+                if (rnd < chanceNotRare)
+                    return;
+                SetMonData(&gEnemyParty[0], MON_DATA_HELD_ITEM, &sAlteringCaveWildMonHeldItems[alteringCaveId].item);
             }
             else
             {
-                if (gBaseStats[species].itemCommon == gBaseStats[species].itemRare && gBaseStats[species].itemCommon != ITEM_NONE)
-                {
-                    // Both held items are the same, 100% chance to hold item
-                    SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &gBaseStats[species].itemCommon);
-                }
+                // In inactive Altering Cave, use normal items
+                if (rnd < chanceNoItem)
+                    return;
+                if (rnd < chanceNotRare)
+                    SetMonData(&gEnemyParty[0], MON_DATA_HELD_ITEM, &gBaseStats[species].itemCommon);
                 else
-                {
-                    if (rnd < chanceNoItem)
-                        continue;
-                    if (rnd < chanceNotRare)
-                        SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &gBaseStats[species].itemCommon);
-                    else
-                        SetMonData(&gEnemyParty[i], MON_DATA_HELD_ITEM, &gBaseStats[species].itemRare);
-                }
+                    SetMonData(&gEnemyParty[0], MON_DATA_HELD_ITEM, &gBaseStats[species].itemRare);
+            }
+        }
+        else
+        {
+            if (gBaseStats[species].itemCommon == gBaseStats[species].itemRare && gBaseStats[species].itemCommon != ITEM_NONE)
+            {
+                // Both held items are the same, 100% chance to hold item
+                SetMonData(&gEnemyParty[0], MON_DATA_HELD_ITEM, &gBaseStats[species].itemCommon);
+            }
+            else
+            {
+                if (rnd < chanceNoItem)
+                    return;
+                if (rnd < chanceNotRare)
+                    SetMonData(&gEnemyParty[0], MON_DATA_HELD_ITEM, &gBaseStats[species].itemCommon);
+                else
+                    SetMonData(&gEnemyParty[0], MON_DATA_HELD_ITEM, &gBaseStats[species].itemRare);
             }
         }
     }
