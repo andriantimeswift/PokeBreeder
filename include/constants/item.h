@@ -2,14 +2,15 @@
 #define GUARD_ITEM_CONSTANTS_H
 
 // These constants are used in gItems
+
 #define POCKET_NONE         0
 #define POCKET_ITEMS        1
 #define POCKET_MEDICINE     2
 #define POCKET_POKE_BALLS   3
-#define POCKET_BATTLE_ITEMS 4
-#define POCKET_BERRIES      5
+#define POCKET_TM_HM        4
+#define POCKET_BATTLE_ITEMS 5
 #define POCKET_TREASURES    6
-#define POCKET_TM_HM        7
+#define POCKET_BERRIES      7
 #define POCKET_KEY_ITEMS    8
 
 #define ITEMS_POCKET        0

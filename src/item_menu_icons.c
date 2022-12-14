@@ -117,7 +117,7 @@ static const union AnimCmd *const sBagSpriteAnimTable[] =
     [POCKET_POKE_BALLS] = sSpriteAnim_Bag_Pokeballs,
     [POCKET_TM_HM]      = sSpriteAnim_Bag_TMsHMs,
     [POCKET_BATTLE_ITEMS]=sSpriteAnim_Bag_BattleItems,
-    [POCKET_POWER_UP]   = sSpriteAnim_Bag_PowerUp,
+    [POCKET_TREASURES]  = sSpriteAnim_Bag_PowerUp,
     [POCKET_BERRIES]    = sSpriteAnim_Bag_Berries,
     [POCKET_KEY_ITEMS]  = sSpriteAnim_Bag_KeyItems,
 };
