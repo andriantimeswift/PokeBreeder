@@ -1,0 +1,63 @@
+[33mcommit 90403b8637041bb0031064541bc41c5e04607125[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m
+Author: andriantimeswift <thethirdtwin777@gmail.com>
+Date:   Tue Dec 13 18:27:23 2022 -0500
+
+    Squashed commit of the following:
+    
+    commit e3c52aea165286c8c1cc21418d17b75691188137
+    Merge: 1c746c179 a0b3d4df1
+    Author: ghoulslash <pokevoyager0@gmail.com>
+    Date:   Fri Apr 2 10:08:47 2021 -0600
+    
+        merge with pret
+    
+    commit 1c746c1793b6f72683e55f348068e31b26cd421d
+    Merge: 3c5319613 29e59c8ee
+    Author: Evan <eroelke@gmail.com>
+    Date:   Wed Jan 13 13:54:37 2021 -0700
+    
+        merge with pret
+    
+    commit 3c53196139d1681338fae9ae88322895f9827838
+    Merge: 107d09cd3 46f4a4bbf
+    Author: Evan <eroelke@gmail.com>
+    Date:   Mon Jun 15 21:29:23 2020 -0600
+    
+        merge with pret
+    
+    commit 107d09cd3af366fee52ef78cdd414da47bd282f9
+    Author: Evan <eroelke@gmail.com>
+    Date:   Sat Jun 6 10:30:47 2020 -0600
+    
+        reset new registered items on new gmae
+    
+    commit aeaa3c2832887820cc9ea5a50a7ae241286117e8
+    Merge: 387876206 675f5ac03
+    Author: Evan <eroelke@gmail.com>
+    Date:   Sat Jun 6 10:29:58 2020 -0600
+    
+        merge with pret
+    
+    commit 387876206b8d145bd7f5baabf12beb174dba46f7
+    Author: Evan <eroelke@gmail.com>
+    Date:   Tue Mar 31 22:54:30 2020 -0600
+    
+        fix submenu cancel bug
+    
+    commit effde8e2d790da2d35999a27e0dd4db75e7d09e4
+    Author: Evan <eroelke@gmail.com>
+    Date:   Mon Mar 9 17:17:30 2020 -0600
+    
+        remove temp new game fixes
+    
+    commit 4febec4606cb68ee0fdf3aeb4e74b09e0699a335
+    Author: Evan <eroelke@gmail.com>
+    Date:   Mon Mar 9 17:05:35 2020 -0600
+    
+        initial code
+
+[33mcommit 9e5958122011a2d5092db57f07f14fd511fb6f42[m
+Author: GriffinR <griffin.g.richards@gmail.com>
+Date:   Tue Jan 26 04:41:13 2021 -0500
+
+    Document object lock and some trainer approach
